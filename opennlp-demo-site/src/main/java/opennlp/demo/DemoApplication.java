@@ -17,6 +17,9 @@
 
 package opennlp.demo;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
@@ -28,27 +31,24 @@ import org.glassfish.jersey.server.ResourceConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
+public class DemoApplication extends javax.ws.rs.core.Application {
 
-public class Application {
-
-  private static final Logger LOG = LoggerFactory.getLogger(Application.class);
-
-  final private static String DEFAULT_PORT = "4567";
-  final private static String DEFAULT_IP = "127.0.0.1";
+  private static final Logger LOG = LoggerFactory.getLogger(DemoApplication.class);
 
   final public static String VERSION = "1";
   final public static String REST_CONTEXT = "/rest/v" + VERSION + "/";
-
+  final public static String DEFAULT_PORT = "4567";
+  final public static String DEFAULT_IP = "127.0.0.1";
   final private Server server;
+  final private String serverUrl;
 
-  private Application() throws IOException {
+  public DemoApplication() throws IOException {
     String ip = System.getProperty("serverIp", DEFAULT_IP);
     int port = Integer.parseInt(System.getProperty("serverPort", DEFAULT_PORT));
 
     InetSocketAddress address = new InetSocketAddress(ip, port);
     server = new Server(address);
+    serverUrl = "http://" + ip + ":" + port + "/";
 
     ContextHandler apiHandler = buildApiHandler();
     apiHandler.setContextPath(REST_CONTEXT);
@@ -65,6 +65,16 @@ public class Application {
     server.dump(System.err);
   }
 
+  public static void main(String[] args) throws Exception {
+    DemoApplication app = new DemoApplication();
+    LOG.info("Starting server at " + app.serverUrl);
+    app.start();
+  }
+
+  public String getServerUrl() {
+    return serverUrl;
+  }
+
   protected void start() {
     try {
       server.start();
@@ -74,8 +84,6 @@ public class Application {
     }
   }
 
-
-
   private ContextHandler buildStaticHandler() {
     // Add pathspec for static assets
     ServletHolder staticHolder = new ServletHolder("static-holder", DefaultServlet.class);
@@ -83,7 +91,8 @@ public class Application {
     String staticDir = System.getProperty("staticDir");
     if (null == staticDir) {
       LOG.debug("Loading static resources from jar");
-      staticHolder.setInitParameter("resourceBase", this.getClass().getClassLoader().getResource("public").toExternalForm());
+      staticHolder.setInitParameter("resourceBase",
+          this.getClass().getClassLoader().getResource("public").toExternalForm());
     } else {
       // set -DstaticDir=${project_loc}/src/main/resources/public
       // in VM args of Run Configuration or in args of mvn exec plugin
@@ -106,7 +115,8 @@ public class Application {
     // setup rest endpoint
     application.packages("opennlp.demo.resource").register(JacksonFeature.class);
 
-    ServletHolder apiHolder = new ServletHolder(new org.glassfish.jersey.servlet.ServletContainer(application));
+    ServletHolder apiHolder = new ServletHolder(
+        new org.glassfish.jersey.servlet.ServletContainer(application));
     // apiHolder.setInitOrder(0);
     // apiHolder.setInitParameter(ServerProperties.PROVIDER_PACKAGES, "resource");
 
@@ -114,10 +124,5 @@ public class Application {
     apiHolderContext.addServlet(apiHolder, "/*");
 
     return apiHolderContext;
-  }
-
-  public static void main(String[] args) throws Exception {
-    Application app = new Application();
-    app.start();
   }
 }
