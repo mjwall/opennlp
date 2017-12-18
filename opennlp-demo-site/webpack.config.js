@@ -180,7 +180,7 @@ module.exports = function makeWebpackConfig() {
     // Render index.html
     config.plugins.push(
       new HtmlWebpackPlugin({
-        template: './src/frontend/public/index.html',
+        template: './src/frontend/index.html',
         inject: 'body'
       }),
 
@@ -205,7 +205,7 @@ module.exports = function makeWebpackConfig() {
       // Copy assets from the public folder
       // Reference: https://github.com/kevlened/copy-webpack-plugin
       new CopyWebpackPlugin([{
-        from: __dirname + '/src/frontend/public'
+        from: __dirname + '/src/frontend/assets'
       }])
     )
   }
@@ -216,7 +216,7 @@ module.exports = function makeWebpackConfig() {
    * Reference: http://webpack.github.io/docs/webpack-dev-server.html
    */
   config.devServer = {
-    contentBase: './src/frontend/public',
+    contentBase: './src/frontend/assets',
     stats: 'minimal'
   };
 
